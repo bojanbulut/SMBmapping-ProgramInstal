@@ -1,0 +1,38 @@
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted
+$Networkpath = "\\samba.example.edu" 
+$pathExists = Test-Path -Path "X:\"
+$stagingBranch= Test-Path -Path "C:\StagingBranch"
+$InstallFolder= Test-Path -Path "C:\Program Files\Wavefunction\Spartan20v100"
+
+mkdir C:\StagingBranch  # creates the C:\StagingBranch Directory used to hold install files and dependencies
+
+if ($pathExists = $true)    #checks for the network share and if it is mapped if not it will map it
+{echo "Drive Already mapped" 
+}
+if ($pathExists = $false)
+
+{
+New-SMBMapping -LocalPath "X:" -RemotePath '\\samba.example.edu\acasoft' #drive mapping process 
+}
+
+cd \\samba.example.edu\acasoft\Spartan  #Change directory to the network Share
+
+Copy-Item -Path "\\samba.example.edu\acasoft" -Destination "C:\StagingBranch\Spartan" -Recurse   #Copies Items for install
+
+cd C:\StagingBranch\Spartan
+
+Invoke-Item Spartan20Install.cmd #invoking install script
+
+ Start-Sleep -S 180 #Sleeps the program to wait for the install to finish and files not to be in use before removal
+
+if ($InstallFolder= $True)   #checks for the existence of the install folder under"C:\Program Files\Wavefunction\Spartan20v100\ removes C:\StagingBranch\Spartan once the install is complete
+{
+remove-Item "C:\StagingBranch\Spartan" -Recurse #removes unncessary installer fles
+echo "Install complete and install files removed" 
+} 
+
+sleep -Seconds 200 
+
+Set-ExecutionPolicy -ExecutionPolicy Restricted
+
+exit
